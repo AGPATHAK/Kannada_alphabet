@@ -137,9 +137,7 @@ Cancel
 </div>
 </div>
 
-<div class="w-full bg-slate-100 rounded-full h-1.5 mb-6">
-<div id="progressBar" class="bg-slate-800 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
-</div>
+
 <div class="w-full bg-slate-100 rounded-full h-1.5 mb-6">
 <div id="progressBar" class="bg-slate-800 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
 </div>
@@ -422,27 +420,41 @@ const card=session.cards[session.index];
 const correct=card.dev;
 const buttons=document.querySelectorAll("#options button");
 
+const isCorrect = value === correct;
 buttons.forEach(b=>{
-b.disabled=true;
-if(b.textContent===correct)
-b.classList.add("bg-green-500","text-white");
-else if(b.textContent===value)
-b.classList.add("bg-rose-500","text-white");
-else
-b.classList.add("opacity-60");
+  b.disabled=true;
+  if(b.textContent===correct)
+    b.classList.add("bg-green-500","text-white");
+  else if(b.textContent===value && !isCorrect)
+    b.classList.add("bg-rose-500","text-white");
+  else
+    b.classList.add("opacity-60");
 });
 
-updateLetterStats(card,value===correct);
+if(!isCorrect){
+  const wrongBtn=Array.from(buttons).find(b=>b.textContent===value);
+  if(wrongBtn){
+    wrongBtn.classList.remove("bg-rose-500","text-white");
+    let blinks=0;
+    const blink=setInterval(()=>{
+      wrongBtn.classList.toggle("bg-rose-500");
+      wrongBtn.classList.toggle("text-white");
+      blinks++;
+      if(blinks>=6){ clearInterval(blink); wrongBtn.classList.add("bg-rose-500","text-white"); }
+    },120);
+  }
+}
 
-if(value===correct) session.score++;
+updateLetterStats(card,isCorrect);
+if(isCorrect) session.score++;
 else mistakes.push(card);
 
 document.getElementById("score").textContent=session.score;
 
 setTimeout(()=>{
-session.index++;
-nextCard();
-},800);
+  session.index++;
+  nextCard();
+},1400);
 }
 
 function runTimer(){
