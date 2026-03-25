@@ -193,6 +193,11 @@ Home
 <div id="recentHistory"></div>
 <div id="letterStats"></div>
 
+<button id="resetLetterStatsBtn"
+class="w-full py-3 border border-rose-300 text-rose-600 rounded-xl hover:bg-rose-50">
+Reset Letter Accuracy Data
+</button>
+
 <button onclick="show('home')"
 class="w-full py-3 bg-black text-white rounded-xl hover:bg-slate-800">
 Back to Home
@@ -568,31 +573,81 @@ progress.sessions.length>0?
 "";
 }
 
-function renderStats(){
-const avg=progress.totalAttempts>0?
-Math.round((progress.totalCorrect/progress.totalAttempts)*100):0;
-
-document.getElementById("overallStats").innerHTML=`
-<p>Total Sessions: ${progress.totalSessions}</p>
-<p>Average Accuracy: ${avg}%</p>
-<p>Best Streak: ${progress.bestStreak}</p>
-`;
-
-document.getElementById("recentHistory").innerHTML=
-`<h3 class="font-semibold">Recent Sessions</h3>
-<ul>${progress.sessions.slice(0,5).map(s=>
-`<li>${s.score}/${s.total} (${s.accuracy}%)</li>`).join("")}</ul>`;
-
-const letters=Object.keys(progress.letterStats);
-document.getElementById("letterStats").innerHTML=
-`<h3 class="font-semibold">Letter Accuracy</h3>
-<ul>${letters.map(l=>{
-let s=progress.letterStats[l];
-let acc=Math.round((s.correct/s.attempts)*100);
-return `<li>${l} – ${acc}%</li>`;
-}).join("")}</ul>`;
+function formatSessionDate(isoString){
+  const d=new Date(isoString);
+  const now=new Date();
+  const diffDays=Math.floor((now-d)/(1000*60*60*24));
+  if(diffDays===0) return "Today";
+  if(diffDays===1) return "Yesterday";
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
 }
 
+function renderStats(){
+  const avg=progress.totalAttempts>0?
+    Math.round((progress.totalCorrect/progress.totalAttempts)*100):0;
+
+  document.getElementById("overallStats").innerHTML=`
+    <h3 class="font-semibold mb-3">Overview</h3>
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <div class="bg-slate-100 rounded-xl p-4">
+        <div class="text-2xl font-bold">${progress.totalSessions}</div>
+        <div class="text-sm text-slate-600">Sessions</div>
+      </div>
+      <div class="bg-slate-100 rounded-xl p-4">
+        <div class="text-2xl font-bold">${avg}%</div>
+        <div class="text-sm text-slate-600">Avg Accuracy</div>
+      </div>
+      <div class="bg-slate-100 rounded-xl p-4">
+        <div class="text-2xl font-bold">${progress.bestStreak}</div>
+        <div class="text-sm text-slate-600">Best Streak</div>
+      </div>
+    </div>`;
+
+  const recentSessions=progress.sessions.slice(0,5);
+  document.getElementById("recentHistory").innerHTML=`
+    <h3 class="font-semibold mb-3">Recent Sessions</h3>
+    <div class="space-y-2">
+      ${recentSessions.length===0
+        ? `<p class="text-slate-400 text-sm">No sessions yet</p>`
+        : recentSessions.map(s=>`
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+          <div class="text-sm text-slate-500">${formatSessionDate(s.date)}</div>
+          <div class="font-semibold">${s.score}/${s.total}</div>
+          <div class="text-sm ${s.accuracy===100?'text-green-600':'text-slate-600'}">${s.accuracy}%</div>
+        </div>`).join("")}
+    </div>`;
+
+  const letterStats=progress.letterStats;
+  const weakLetters=Object.keys(letterStats)
+    .map(l=>({
+      kn:l,
+      acc:Math.round((letterStats[l].correct/letterStats[l].attempts)*100),
+      attempts:letterStats[l].attempts
+    }))
+    .filter(l=>l.acc<99)
+    .sort((a,b)=>a.acc-b.acc)
+    .slice(0,10);
+
+  document.getElementById("letterStats").innerHTML=`
+    <h3 class="font-semibold mb-3">Letters to Work On</h3>
+    ${weakLetters.length===0
+      ? `<p class="text-slate-400 text-sm">No weak letters yet — keep practicing!</p>`
+      : `<div class="space-y-2">
+        ${weakLetters.map(l=>`
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+          <div class="kn text-2xl font-bold">${l.kn}</div>
+          <div class="text-sm text-slate-500">${l.attempts} attempts</div>
+          <div class="font-semibold text-rose-600">${l.acc}%</div>
+        </div>`).join("")}
+      </div>`}`;
+}
+document.getElementById("resetLetterStatsBtn").onclick=()=>{
+  if(confirm("Reset all letter accuracy data? Session history will be kept.")){
+    progress.letterStats={};
+    saveProgress(progress);
+    renderStats();
+  }
+};
 renderDashboard();
 
 </script>
