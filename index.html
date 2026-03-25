@@ -18,21 +18,16 @@ body { font-family: Inter, system-ui, sans-serif; }
 .shadow-soft { box-shadow: 0 8px 28px rgba(0,0,0,0.08); }
 
 .timer-ring {
-  width: 56px;
-  height: 56px;
-  border-radius: 9999px;
-  border: 6px solid #e5e7eb;
-  position: relative;
-}
-.timer-ring::after {
-  content: attr(data-time);
-  position: absolute;
-  inset: 0;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: #334155;
+}
+.timer-ring::after {
+  content: attr(data-time);
 }
 </style>
 </head>
@@ -142,6 +137,9 @@ Cancel
 </div>
 </div>
 
+<div class="w-full bg-slate-100 rounded-full h-1.5 mb-6">
+<div id="progressBar" class="bg-slate-800 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+</div>
 <div class="text-center mb-8">
 <div id="prompt" class="kn text-8xl font-bold"></div>
 </div>
@@ -399,6 +397,8 @@ function renderCard(){
 const card=session.cards[session.index];
 document.getElementById("prompt").textContent=card.kn;
 document.getElementById("cardIndex").textContent=session.index+1;
+document.getElementById("progressBar").style.width=
+  Math.round(((session.index)/session.cards.length)*100)+"%";
 
 const options=buildOptions(card,session.pool);
 const box=document.getElementById("options");
@@ -455,7 +455,7 @@ mistakes.push(session.cards[session.index]);
 session.index++;
 nextCard();
 }
-},1000);
+},1200);
 }
 
 function updateLetterStats(card,correct){
